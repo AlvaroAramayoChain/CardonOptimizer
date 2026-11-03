@@ -79,6 +79,19 @@ For each step, check afterwards that **no new folder** appeared in
 - [ ] `HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection\AllowTelemetry` = 1 (Home/Pro) or 0 (Enterprise/Education).
 - [ ] DISM finishes with exit code 0 (or 3010); `Optimize-Volume` runs ReTrim on SSD / Defrag on HDD.
 
+## 6b. Notebook running on battery (new in 1.1.0)
+
+Needs a VM with an emulated battery (or a real laptop with a snapshot/restore point).
+Check the state with `Get-CimInstance Win32_Battery | Select BatteryStatus` (1 = on battery, 2 = plugged in).
+
+- [ ] **Notebook + unplugged:** the level 2 description warns that DISM and HDD defragmentation will be skipped.
+- [ ] **Notebook + unplugged:** step "DISM" shows in yellow `Skipped - Running on battery: connect the charger and run the level again`.
+- [ ] **Notebook + unplugged:** "Optimizing drives" runs TRIM on SSD and shows "HDD -> defragmentation skipped (running on battery)" in yellow.
+- [ ] **Notebook + unplugged:** the summary counts these as **Skipped**, and Errors stays at 0. The rest of the level runs normally.
+- [ ] **Notebook + plugged in:** DISM and defragmentation run normally (check with option 4 first: both show "Would apply").
+- [ ] **Desktop selected** (even on a VM with an unplugged battery): DISM and defragmentation run normally and no battery warning appears.
+- [ ] Unplug the charger **during** a level: the decision is taken when each step starts (expected; no crash).
+
 ## 7. Level 3 (Extreme)
 
 - [ ] The app list shows only installed apps from the allow-list, none preselected.

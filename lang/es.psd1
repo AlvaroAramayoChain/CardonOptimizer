@@ -216,4 +216,8 @@
     Info_DeviceProfile       = 'Tipo de equipo: {0} (define el plan de energía que se usa).'
     Info_NotebookPower       = 'En notebook se mantiene el plan Equilibrado y no se ofrece Máximo rendimiento.'
     Detail_NotebookBalanced  = 'Notebook: se usa el plan Equilibrado (no se fuerza Alto rendimiento).'
-    Ultimate_NotebookSkipped = 'no se ofrece en notebooks (más calor y menos batería)'}
+    Ultimate_NotebookSkipped = 'no se ofrece en notebooks (más calor y menos batería)'
+    # --- Notebook a batería (v1.1) --------------------------------------------
+    Warn_OnBatteryLongTask      = 'Funcionando a batería: conecta el cargador y vuelve a ejecutar el nivel.'
+    Detail_DefragSkippedBattery = 'Unidad {0}: HDD -> desfragmentación omitida (funcionando a batería). Conecta el cargador y vuelve a ejecutar el nivel.'
+    Warn_OnBatteryLevel         = 'La notebook está funcionando a batería: se omitirán DISM y la desfragmentación de discos HDD (el TRIM de SSD sí se hace).'}

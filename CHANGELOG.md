@@ -20,6 +20,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - README warnings: removing apps cannot be undone, do not use on organization-managed PCs, and the
   restore point / 24-hour limit.
 - `tests/MANUAL-TESTING.md`: manual test plan for a virtual machine.
+- Notebooks running on battery (`Win32_Battery.BatteryStatus`) skip DISM and HDD defragmentation, with a
+  yellow "connect the charger and run the level again" warning; SSD TRIM still runs. Counted as skipped, not
+  as an error. Plugged-in notebooks and desktops are not affected (on desktops the battery is not checked).
 
 ### Changed
 - Power plan depends on the device type: desktops get High performance (or Balanced), notebooks keep

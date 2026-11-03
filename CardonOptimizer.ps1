@@ -442,6 +442,32 @@ function Test-CardonBattery {
     }
 }
 
+function Test-CardonOnBatteryPower {
+    <#
+        $true when the computer is running on battery (unplugged). Win32_Battery.BatteryStatus:
+        1 = discharging, 4 = low, 5 = critical. Charging, AC or unknown states count as plugged in.
+    #>
+    try {
+        $batteries = @(Get-CimInstance -ClassName Win32_Battery -ErrorAction Stop)
+        foreach ($battery in $batteries) {
+            if (@(1, 4, 5) -contains [int]$battery.BatteryStatus) { return $true }
+        }
+        return $false
+    }
+    catch {
+        return $false
+    }
+}
+
+function Test-CardonSkipLongMaintenance {
+    <#
+        Long maintenance (DISM, HDD defragmentation) is skipped only on notebooks that are
+        running on battery. On desktops the battery is not even checked.
+    #>
+    if ((Get-CardonDeviceType) -ne 'Notebook') { return $false }
+    return (Test-CardonOnBatteryPower)
+}
+
 function Get-CardonMinimumTelemetryLevel {
     <# 0 (Security) is only honored by Enterprise/Education editions; others accept 1 (Required). #>
     $edition = (Get-CardonOsInfo).Edition
@@ -1305,6 +1331,10 @@ function Invoke-CardonStartupReview {
 
 function Invoke-CardonComponentCleanup {
     <# DISM component store cleanup WITHOUT /ResetBase, so installed updates can still be uninstalled. #>
+    if (Test-CardonSkipLongMaintenance) {
+        # Skipped (not an error): a long DISM run could drain the battery halfway.
+        return (New-CardonResult -Status Skipped -Detail (Get-CardonText -Key 'Warn_OnBatteryLongTask'))
+    }
     if ($script:DryRun) { return (New-CardonResult -Status Preview) }
     Show-CardonText -Key 'Detail_DismWait' -Style Detail
     $drive = Get-PSDrive -Name ($env:SystemDrive.TrimEnd(':'))
@@ -1340,7 +1370,11 @@ function Get-CardonFixedVolume {
 }
 
 function Invoke-CardonDiskOptimization {
-    <# TRIM on SSD, defragment on HDD, nothing when the type is unknown. Never defragments an SSD. #>
+    <#
+        TRIM on SSD, defragment on HDD, nothing when the type is unknown. Never defragments an SSD.
+        On a notebook running on battery, HDD defragmentation is skipped (TRIM is short and still runs).
+    #>
+    $onBattery = Test-CardonSkipLongMaintenance
     $statuses = foreach ($volume in @(Get-CardonFixedVolume)) {
         switch ($volume.Media) {
             'SSD' {
@@ -1348,8 +1382,14 @@ function Invoke-CardonDiskOptimization {
                 if ($script:DryRun) { 'Preview' } else { Optimize-Volume -DriveLetter $volume.Letter -ReTrim -ErrorAction Stop; 'Changed' }
             }
             'HDD' {
-                Show-CardonText -Key 'Detail_Defrag' -Arguments @($volume.Letter) -Style Detail
-                if ($script:DryRun) { 'Preview' } else { Optimize-Volume -DriveLetter $volume.Letter -Defrag -ErrorAction Stop; 'Changed' }
+                if ($onBattery) {
+                    Show-CardonText -Key 'Detail_DefragSkippedBattery' -Arguments @($volume.Letter) -Style Warn
+                    'Skipped'
+                }
+                else {
+                    Show-CardonText -Key 'Detail_Defrag' -Arguments @($volume.Letter) -Style Detail
+                    if ($script:DryRun) { 'Preview' } else { Optimize-Volume -DriveLetter $volume.Letter -Defrag -ErrorAction Stop; 'Changed' }
+                }
             }
             default {
                 Show-CardonText -Key 'Detail_DiskUnknown' -Arguments @($volume.Letter) -Style Warn
@@ -1619,7 +1659,10 @@ function Show-CardonLevelDescription {
     Write-CardonLine
     Show-CardonText -Key 'Info_DeviceProfile' -Arguments @((Get-CardonDeviceName)) -Style Detail
     if ((Get-CardonDeviceType) -eq 'Notebook') { Show-CardonText -Key 'Info_NotebookPower' -Style Detail }
-    if ($Level -ge 2) { Show-CardonText -Key 'Warn_Level2_Time' -Style Warn }
+    if ($Level -ge 2) {
+        Show-CardonText -Key 'Warn_Level2_Time' -Style Warn
+        if (Test-CardonSkipLongMaintenance) { Show-CardonText -Key 'Warn_OnBatteryLevel' -Style Warn }
+    }
     Show-CardonText -Key 'Info_SafetyNet' -Style Detail
     # Last thing shown right before the confirmation of the Extreme level.
     if ($Level -ge 3) {

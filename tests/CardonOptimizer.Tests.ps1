@@ -772,3 +772,97 @@ Describe 'Back navigation: 0 returns to the menu without restore points or backu
         Should -Invoke New-CardonBackupSession -Times 0 -Exactly
     }
 }
+
+Describe 'Notebook on battery: long maintenance is skipped' {
+    BeforeEach {
+        $script:DryRun = $true
+        Mock Write-Host { }
+        Mock Show-CardonText { }
+        Mock Start-Process { throw 'DISM must not run in these tests.' }
+        Mock Optimize-Volume { }
+        Mock Get-PSDrive { [pscustomobject]@{ Name = 'C'; Free = 1GB } }
+        Mock Get-CardonFixedVolume {
+            [pscustomobject]@{ Letter = 'C'; Media = 'SSD' }
+            [pscustomobject]@{ Letter = 'D'; Media = 'HDD' }
+        }
+    }
+
+    AfterEach {
+        $script:DryRun = $false
+        $script:SessionDeviceType = $null
+    }
+
+    It 'BatteryStatus 1/4/5 means running on battery; charging, AC or no battery means plugged in' {
+        Mock Get-CimInstance { [pscustomobject]@{ BatteryStatus = 1 } }
+        Test-CardonOnBatteryPower | Should -BeTrue
+        Mock Get-CimInstance { [pscustomobject]@{ BatteryStatus = 5 } }
+        Test-CardonOnBatteryPower | Should -BeTrue
+        Mock Get-CimInstance { [pscustomobject]@{ BatteryStatus = 2 } }
+        Test-CardonOnBatteryPower | Should -BeFalse
+        Mock Get-CimInstance { [pscustomobject]@{ BatteryStatus = 6 } }
+        Test-CardonOnBatteryPower | Should -BeFalse
+        Mock Get-CimInstance { }
+        Test-CardonOnBatteryPower | Should -BeFalse
+    }
+
+    It 'on battery: DISM and HDD defragmentation are skipped, SSD TRIM continues' {
+        $script:SessionDeviceType = 'Notebook'
+        Mock Test-CardonOnBatteryPower { $true }
+
+        $dism = Invoke-CardonComponentCleanup
+        $dism.Status | Should -Be 'Skipped'
+        $dism.Detail | Should -Be (Get-CardonText -Key 'Warn_OnBatteryLongTask')
+
+        (Invoke-CardonDiskOptimization).Status | Should -Be 'Preview'
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Detail_Trim' }
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Detail_DefragSkippedBattery' -and $Style -eq 'Warn' }
+        Should -Invoke Show-CardonText -Times 0 -Exactly -ParameterFilter { $Key -eq 'Detail_Defrag' }
+    }
+
+    It 'on battery (real mode, mocked): only TRIM runs, never defrag or DISM' {
+        $script:SessionDeviceType = 'Notebook'
+        $script:DryRun = $false
+        Mock Test-CardonOnBatteryPower { $true }
+        [void](Invoke-CardonComponentCleanup)
+        [void](Invoke-CardonDiskOptimization)
+        Should -Invoke Start-Process -Times 0 -Exactly
+        Should -Invoke Optimize-Volume -Times 1 -Exactly -ParameterFilter { $ReTrim -and $DriveLetter -eq 'C' }
+        Should -Invoke Optimize-Volume -Times 0 -Exactly -ParameterFilter { $Defrag }
+    }
+
+    It 'on battery the step counts as skipped in the summary, not as an error' {
+        $script:SessionDeviceType = 'Notebook'
+        $script:DryRun = $false
+        Mock Test-CardonOnBatteryPower { $true }
+        $script:Stats = @{ Changed = 0; Skipped = 0; Errors = 0; Previewed = 0; FreedBytes = [int64]0; NeedsRestart = $false }
+        Invoke-CardonAction -Action ($Catalog | Where-Object Id -eq 'ComponentCleanup') -Index 15 -Total 16
+        $script:Stats.Skipped | Should -Be 1
+        $script:Stats.Errors | Should -Be 0
+    }
+
+    It 'plugged in: DISM and defragmentation run (shown in preview)' {
+        $script:SessionDeviceType = 'Notebook'
+        Mock Test-CardonOnBatteryPower { $false }
+        (Invoke-CardonComponentCleanup).Status | Should -Be 'Preview'
+        (Invoke-CardonDiskOptimization).Status | Should -Be 'Preview'
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Detail_Defrag' }
+        Should -Invoke Show-CardonText -Times 0 -Exactly -ParameterFilter { $Key -eq 'Detail_DefragSkippedBattery' }
+    }
+
+    It 'desktop: the battery is not evaluated and everything runs' {
+        $script:SessionDeviceType = 'Desktop'
+        Mock Test-CardonOnBatteryPower { $true }
+        (Invoke-CardonComponentCleanup).Status | Should -Be 'Preview'
+        (Invoke-CardonDiskOptimization).Status | Should -Be 'Preview'
+        Show-CardonLevelDescription -Level 2 -Actions @()
+        Should -Invoke Test-CardonOnBatteryPower -Times 0 -Exactly
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Detail_Defrag' }
+    }
+
+    It 'the level description warns before confirming when a notebook is on battery' {
+        $script:SessionDeviceType = 'Notebook'
+        Mock Test-CardonOnBatteryPower { $true }
+        Show-CardonLevelDescription -Level 2 -Actions @()
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Warn_OnBatteryLevel' }
+    }
+}

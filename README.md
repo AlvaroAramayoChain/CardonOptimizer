@@ -94,6 +94,7 @@ Después de elegir el idioma, CardonOptimizer pregunta si el equipo es una **com
 |---|---|---|
 | Plan de energía (nivel 1) | Alto rendimiento (o Equilibrado si no existe) | Equilibrado |
 | Máximo rendimiento (nivel 3) | Se ofrece (opcional) | No se ofrece: más calor y menos batería |
+| DISM y desfragmentación de HDD (nivel 2) | Siempre | Se omiten si está **funcionando a batería** (conecta el cargador y vuelve a ejecutar el nivel). El TRIM de SSD sí se hace |
 
 ### Navegación
 
@@ -290,6 +291,7 @@ After choosing the language, CardonOptimizer asks whether the computer is a **de
 |---|---|---|
 | Power plan (level 1) | High performance (or Balanced if it does not exist) | Balanced |
 | Ultimate Performance (level 3) | Offered (optional) | Not offered: more heat and less battery |
+| DISM and HDD defragmentation (level 2) | Always | Skipped when **running on battery** (connect the charger and run the level again). SSD TRIM still runs |
 
 ### Navigation
 

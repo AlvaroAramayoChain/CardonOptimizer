@@ -216,4 +216,8 @@
     Info_DeviceProfile       = 'Device type: {0} (defines the power plan that is used).'
     Info_NotebookPower       = 'On notebooks the Balanced plan is kept and Ultimate Performance is not offered.'
     Detail_NotebookBalanced  = 'Notebook: the Balanced plan is used (High performance is not forced).'
-    Ultimate_NotebookSkipped = 'not offered on notebooks (more heat and less battery)'}
+    Ultimate_NotebookSkipped = 'not offered on notebooks (more heat and less battery)'
+    # --- Notebook on battery (v1.1) -------------------------------------------
+    Warn_OnBatteryLongTask      = 'Running on battery: connect the charger and run the level again.'
+    Detail_DefragSkippedBattery = 'Drive {0}: HDD -> defragmentation skipped (running on battery). Connect the charger and run the level again.'
+    Warn_OnBatteryLevel         = 'The notebook is running on battery: DISM and HDD defragmentation will be skipped (SSD TRIM still runs).'}
