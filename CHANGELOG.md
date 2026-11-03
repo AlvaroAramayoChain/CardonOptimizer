@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-03
+
+### Added
+- Device type screen after the language selector: `1) Desktop  2) Notebook / laptop  0) Back`.
+  The battery (`Win32_Battery`) is detected and shown as a suggestion; the user always decides, with a
+  soft warning on a mismatch. The choice is shown in the main menu header next to the language.
+- Main menu option `8) Change device type`.
+- `0` means "Back" on every secondary screen (preview level chooser, undo list, log, language,
+  device type, level confirmations and selection lists). Only the main menu uses `0` to exit.
+- "Press Enter or 0 to go back to the menu" at the end of every secondary screen.
+- README warnings: removing apps cannot be undone, do not use on organization-managed PCs, and the
+  restore point / 24-hour limit.
+- `tests/MANUAL-TESTING.md`: manual test plan for a virtual machine.
+
+### Changed
+- Power plan depends on the device type: desktops get High performance (or Balanced), notebooks keep
+  Balanced. Ultimate Performance is only offered on desktops; on notebooks the step is skipped with a note.
+- Levels now ask every question first (confirmation, startup programs, apps, Ultimate Performance) and only
+  then create the restore point and the backup. Going back at any question leaves nothing created or changed.
+- In the startup and app lists, Enter selects nothing and `0` cancels the list; after cancelling, the user
+  confirms whether to continue with the rest of the level or go back to the menu.
+- Yes/No questions also accept `0` (= no / back). `N` returns to the menu instead of closing the program.
+- The "removed apps cannot be undone" reminder is shown right before confirming the Extreme level.
+
 ## [1.0.0] - 2026-11-03
 
 ### Added
@@ -31,5 +55,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Ejecutar.bat` double-click launcher with UAC elevation and per-process `ExecutionPolicy Bypass`.
 - Pester 5 test suite and PSScriptAnalyzer-clean code.
 
-[Unreleased]: https://github.com/AlvaroAramayoChain/CardonOptimizer/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/AlvaroAramayoChain/CardonOptimizer/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/AlvaroAramayoChain/CardonOptimizer/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/AlvaroAramayoChain/CardonOptimizer/releases/tag/v1.0.0

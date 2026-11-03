@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Platform: Windows 10 | 11](https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6.svg)](#)
 [![PowerShell 5.1 | 7](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE.svg)](#)
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](CHANGELOG.md)
 
 **[Español](#español) · [English](#english)**
 
@@ -15,6 +15,17 @@
 
 > Lo más importante es la seguridad: antes de cada cambio se crea un punto de restauración y un respaldo, todo se puede previsualizar, casi todo se puede deshacer y nada se aplica sin tu confirmación.
 
+### Advertencias importantes
+
+> [!WARNING]
+> **Quitar apps no se puede deshacer.** La opción "Deshacer" restaura el registro, los servicios, el plan de energía y las tareas de inicio, pero **no** las apps eliminadas en el nivel Extremo. Para recuperarlas hay que reinstalarlas desde Microsoft Store. Ninguna app viene preseleccionada: solo se quitan las que elijas.
+
+> [!WARNING]
+> **No lo uses en PCs de empresa o administradas por una organización.** Las políticas del dominio pueden pisar estos ajustes o chocar con ellos, y en Configuración puede aparecer el aviso "Algunas opciones las administra tu organización". Consulta antes con el área de IT.
+
+> [!NOTE]
+> **Se crea un punto de restauración antes de aplicar cambios.** Windows permite crear solo uno cada 24 horas. Si ya existe uno reciente, CardonOptimizer te avisa y decides si continuar usando ese punto o volver al menú.
+
 ### Vista del menú
 
 <!-- Reemplazar por una captura real: docs/screenshot-menu.png -->
@@ -25,9 +36,10 @@
 | (__ / _` || '_|/ _` |/ _ \| ' \ | (_) || '_ \|  _|| || '  \ | ||_ // -_)| '_|
  \___|\__,_||_|  \__,_|\___/|_||_| \___/ | .__/ \__||_||_|_|_||_|/__|\___||_|
                                          |_|
-  v1.0.0   https://desarrollocardon.com
+  v1.1.0   https://desarrollocardon.com
 
 === Menú principal ===
+Idioma: Español   |   Equipo: Notebook / laptop
   1) Optimización Estándar
   2) Optimización Avanzada
   3) Optimización Extrema (segura)
@@ -35,6 +47,7 @@
   5) Deshacer cambios / restaurar
   6) Ver registro (log)
   7) Cambiar idioma
+  8) Cambiar tipo de equipo
   0) Salir
 
 [1/21] Limpiando archivos temporales... OK (546,1 MB) - 9733 archivo(s)
@@ -53,7 +66,7 @@ Cada nivel incluye al anterior. Todas las acciones se pueden ejecutar varias vec
 | | Borra volcados de errores con más de 7 días | No (limpieza) |
 | | Vacía la papelera de reciclaje | No (limpieza) |
 | | Limpia la caché DNS (`ipconfig /flushdns`) | No hace falta |
-| | Plan de energía "Alto rendimiento" (o "Equilibrado"). Avisa si detecta batería | Sí |
+| | Plan de energía: **escritorio** → "Alto rendimiento" (o "Equilibrado" si no existe); **notebook** → "Equilibrado" | Sí |
 | | Desactiva Game DVR (grabación en segundo plano) | Sí |
 | | Desactiva sugerencias, publicidad y apps promocionadas (Inicio y Configuración) | Sí |
 | **2 · Avanzada** | Efectos visuales para rendimiento, **conservando** el suavizado de fuentes y las miniaturas | Sí |
@@ -67,11 +80,27 @@ Cada nivel incluye al anterior. Todas las acciones se pueden ejecutar varias vec
 | | Pasa a **Manual** (nunca a Deshabilitado): `Fax`, `MapsBroker`, `RetailDemo`, `WMPNetworkSvc`, `XblAuthManager`, `XblGameSave`, `XboxNetApiSvc` | Sí |
 | | Desactiva animaciones de ventanas y transparencias | Sí |
 | | Delivery Optimization sin P2P (solo descargas desde Microsoft) | Sí |
-| | Plan "Máximo rendimiento" (opcional; se pregunta antes y se recomienda solo en PC de escritorio) | Sí |
+| | Plan "Máximo rendimiento": **solo en escritorio** y opcional (se pregunta antes). En notebook se omite | Sí |
 
 Apps que se pueden quitar en el nivel Extremo (si están instaladas): Solitaire Collection, Clipchamp, Noticias, El Tiempo, Obtener ayuda, Sugerencias/Introducción, Centro de opiniones, Portal de realidad mixta, Xbox Console Companion, Xbox (Game Pass), Teams personal, Skype, Office Hub, Contactos, Mapas y Vínculo móvil.
 
 **Nunca se quitan:** Microsoft Store, Edge, Calculadora, Fotos, Cámara, Bloc de notas, Paint, Terminal, Instalador de aplicaciones, Seguridad de Windows ni los componentes de runtime (VCLibs, .NET, UI.Xaml).
+
+### Tipo de equipo
+
+Después de elegir el idioma, CardonOptimizer pregunta si el equipo es una **computadora de escritorio** o una **notebook**. Detecta si hay batería y lo muestra como sugerencia, pero la decisión es tuya. Si tu elección no coincide con la detección, ves un aviso y puedes continuar igual. Puedes cambiarla cuando quieras con la opción **8** del menú.
+
+| | Escritorio | Notebook |
+|---|---|---|
+| Plan de energía (nivel 1) | Alto rendimiento (o Equilibrado si no existe) | Equilibrado |
+| Máximo rendimiento (nivel 3) | Se ofrece (opcional) | No se ofrece: más calor y menos batería |
+
+### Navegación
+
+- En el menú principal, `0` = **Salir**. En cualquier otra pantalla, `0` = **Volver** al menú, sin aplicar nada.
+- Las confirmaciones aceptan `S` (sí), `N` (no) y `0` (volver). `N` y `0` vuelven al menú: no cierran el programa.
+- En las listas de programas de inicio y de apps: **Enter** = no elegir nada de esa lista y seguir; `0` = cancelar esa lista y elegir si seguir con el resto del nivel o volver al menú.
+- Todas las preguntas se hacen **antes** de crear el punto de restauración y el respaldo. Por eso, si vuelves atrás, no queda nada a medias.
 
 ### Seguridad
 
@@ -113,7 +142,7 @@ Las pruebas automáticas de [`tests/`](tests/CardonOptimizer.Tests.ps1) verifica
      powershell -ExecutionPolicy Bypass -File .\CardonOptimizer.ps1
      ```
    `-ExecutionPolicy Bypass` solo afecta a ese proceso: no cambia la política de tu sistema.
-3. Elige el idioma, revisa la **Vista previa** (opción 4) y después aplica el nivel que prefieras.
+3. Elige el idioma y el tipo de equipo, revisa la **Vista previa** (opción 4) y después aplica el nivel que prefieras.
 
 > Recomendación: empieza por el nivel **Estándar**. Si todo va bien, prueba el **Avanzado**.
 
@@ -146,7 +175,7 @@ Está diseñado para serlo: solo hace cambios conservadores y reversibles, crea 
 Seamos honestos: el impacto en FPS suele ser **pequeño o nulo**. Lo que sí notarás es menos procesos en segundo plano, un inicio más rápido si deshabilitas programas de inicio, más espacio libre y un sistema más fluido. Ninguna herramienta de este tipo reemplaza actualizar el hardware (más RAM, un SSD) ni tener los drivers al día.
 
 **¿Funciona en notebooks?**
-Sí. Si detecta una batería, avisa que el plan "Alto rendimiento" puede consumir más, y recomienda no activar "Máximo rendimiento". Puedes volver a "Equilibrado" desde *Deshacer* o desde la configuración de energía de Windows.
+Sí. Elige **Notebook** en la pantalla de tipo de equipo: se mantiene el plan "Equilibrado" y no se ofrece "Máximo rendimiento". Si eliges escritorio en un equipo con batería, avisa que "Alto rendimiento" puede consumir más. Puedes volver al plan anterior desde *Deshacer*.
 
 **¿Por qué no desactiva más servicios o "tweaks" populares?**
 Porque muchos de esos ajustes rompen funciones como la impresión, el Bluetooth, la búsqueda o las actualizaciones, o reducen la seguridad, y su beneficio real es mínimo. Ante la duda, un ajuste no se incluye.
@@ -190,12 +219,24 @@ Las contribuciones son bienvenidas. Abre un *issue* para proponer cambios y env�
 
 > Safety comes first: a restore point and a backup are created before every change, everything can be previewed, almost everything can be undone and nothing is applied without your confirmation.
 
+### Important warnings
+
+> [!WARNING]
+> **Removing apps cannot be undone.** "Undo" restores the registry, services, power plan and startup tasks, but **not** the apps removed in the Extreme level. To get them back, reinstall them from Microsoft Store. No app is preselected: only the ones you choose are removed.
+
+> [!WARNING]
+> **Do not use it on company PCs or computers managed by an organization.** Domain policies can override these settings or conflict with them, and Settings may show "Some settings are managed by your organization". Ask your IT department first.
+
+> [!NOTE]
+> **A restore point is created before applying changes.** Windows only allows one every 24 hours. If a recent one exists, CardonOptimizer tells you and you decide whether to continue with that restore point or go back to the menu.
+
 ### Menu preview
 
 <!-- Replace with a real screenshot: docs/screenshot-menu.png -->
 
 ```text
 === Main menu ===
+Language: English   |   Device: Desktop computer
   1) Standard optimization
   2) Advanced optimization
   3) Extreme optimization (safe)
@@ -203,6 +244,7 @@ Las contribuciones son bienvenidas. Abre un *issue* para proponer cambios y env�
   5) Undo changes / restore
   6) View log
   7) Change language
+  8) Change device type
   0) Exit
 
 [1/21] Cleaning temporary files... OK (546.1 MB) - 9733 file(s)
@@ -220,7 +262,7 @@ Each level includes the previous one. Every action can be run several times safe
 | | Deletes crash dumps older than 7 days | No (cleanup) |
 | | Empties the Recycle Bin | No (cleanup) |
 | | Flushes the DNS cache (`ipconfig /flushdns`) | Not needed |
-| | "High performance" power plan (or "Balanced"). Warns if a battery is detected | Yes |
+| | Power plan: **desktop** → "High performance" (or "Balanced" if it does not exist); **notebook** → "Balanced" | Yes |
 | | Disables Game DVR background recording | Yes |
 | | Disables suggestions, ads and promoted apps (Start and Settings) | Yes |
 | **2 · Advanced** | Visual effects for performance, **keeping** font smoothing and thumbnails | Yes |
@@ -234,11 +276,27 @@ Each level includes the previous one. Every action can be run several times safe
 | | Sets to **Manual** (never Disabled): `Fax`, `MapsBroker`, `RetailDemo`, `WMPNetworkSvc`, `XblAuthManager`, `XblGameSave`, `XboxNetApiSvc` | Yes |
 | | Disables window animations and transparency | Yes |
 | | Delivery Optimization without P2P (downloads only from Microsoft) | Yes |
-| | "Ultimate Performance" power plan (optional; you are asked; desktops only) | Yes |
+| | "Ultimate Performance" power plan: **desktops only** and optional (you are asked first). Skipped on notebooks | Yes |
 
 Apps that can be removed in the Extreme level (if installed): Solitaire Collection, Clipchamp, News, Weather, Get Help, Tips/Get Started, Feedback Hub, Mixed Reality Portal, Xbox Console Companion, Xbox (Game Pass), Teams (personal), Skype, Office Hub, People, Maps and Phone Link.
 
 **Never removed:** Microsoft Store, Edge, Calculator, Photos, Camera, Notepad, Paint, Terminal, App Installer, Windows Security and runtime components (VCLibs, .NET, UI.Xaml).
+
+### Device type
+
+After choosing the language, CardonOptimizer asks whether the computer is a **desktop** or a **notebook**. It detects whether there is a battery and shows that as a suggestion, but you decide. If your choice does not match the detection, you get a warning and can continue anyway. You can change it at any time with menu option **8**.
+
+| | Desktop | Notebook |
+|---|---|---|
+| Power plan (level 1) | High performance (or Balanced if it does not exist) | Balanced |
+| Ultimate Performance (level 3) | Offered (optional) | Not offered: more heat and less battery |
+
+### Navigation
+
+- In the main menu, `0` = **Exit**. On any other screen, `0` = **Back** to the menu, without applying anything.
+- Confirmations accept `Y` (yes), `N` (no) and `0` (back). `N` and `0` return to the menu: they do not close the program.
+- In the startup program and app lists: **Enter** = choose nothing from that list and continue; `0` = cancel that list and choose whether to continue with the rest of the level or go back to the menu.
+- Every question is asked **before** the restore point and the backup are created, so going back never leaves anything half done.
 
 ### Safety
 
@@ -280,7 +338,7 @@ The automated tests in [`tests/`](tests/CardonOptimizer.Tests.ps1) check several
      powershell -ExecutionPolicy Bypass -File .\CardonOptimizer.ps1
      ```
    `-ExecutionPolicy Bypass` only applies to that process: your system policy is not changed.
-3. Choose your language, check the **Preview** (option 4) and then apply the level you want.
+3. Choose your language and device type, check the **Preview** (option 4) and then apply the level you want.
 
 > Tip: start with **Standard**. If everything is fine, try **Advanced**.
 
@@ -313,7 +371,7 @@ It is designed to be: it only makes conservative, reversible changes, creates a 
 Honestly, the FPS impact is usually **small or none**. What you will notice is fewer background processes, faster startup if you disable startup programs, more free space and a smoother system. No tool of this kind replaces a hardware upgrade (more RAM, an SSD) or up-to-date drivers.
 
 **Does it work on laptops?**
-Yes. If a battery is detected, it warns that "High performance" may use more power and recommends not enabling "Ultimate Performance". You can go back to "Balanced" with *Undo* or in Windows power settings.
+Yes. Choose **Notebook** on the device type screen: the "Balanced" plan is kept and "Ultimate Performance" is not offered. If you choose desktop on a computer with a battery, it warns that "High performance" may use more power. You can go back to the previous plan with *Undo*.
 
 **Why doesn't it disable more services or popular "tweaks"?**
 Because many of them break features like printing, Bluetooth, search or updates, or reduce security, and their real benefit is minimal. When in doubt, a tweak is left out.

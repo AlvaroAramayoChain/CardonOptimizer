@@ -45,7 +45,7 @@
     Info_Cancelled  = 'Operación cancelada. No se aplicó ningún cambio.'
     Info_SafetyNet  = 'Antes de empezar se creará un punto de restauración y un respaldo de todo lo que se modifique.'
     Warn_Level2_Time = 'Atención: la limpieza de componentes (DISM) y la optimización de disco pueden tardar varios minutos.'
-    Warn_Level3_Apps = 'Importante: las apps de Windows que quites NO se pueden restaurar desde el respaldo. Nada se quita sin que lo elijas.'
+    Warn_Level3_Apps = 'IMPORTANTE: quitar apps NO se puede deshacer. "Deshacer" restaura registro, servicios, plan de energía y tareas de inicio, pero NO las apps eliminadas: hay que reinstalarlas desde Microsoft Store. Ninguna app viene preseleccionada.'
     Info_StoreReinstall = 'Para reinstalar una app quitada: abre Microsoft Store, búscala por su nombre y pulsa "Obtener" (o usa: winget install "<nombre>").'
 
     # --- Acciones: nombre y descripción ---------------------------------------
@@ -62,7 +62,7 @@
     Action_DnsCache_Name = 'Limpiando caché DNS'
     Action_DnsCache_Desc = 'Ejecuta ipconfig /flushdns. Inofensivo: resuelve problemas de páginas que no cargan.'
     Action_PowerPlan_Name = 'Configurando plan de energía'
-    Action_PowerPlan_Desc = 'Activa "Alto rendimiento" si existe; si no, "Equilibrado". Reversible.'
+    Action_PowerPlan_Desc = 'Escritorio: activa "Alto rendimiento" (o "Equilibrado" si no existe). Notebook: deja "Equilibrado". Reversible.'
     Action_GameDvr_Name = 'Desactivando grabación en segundo plano (Game DVR)'
     Action_GameDvr_Desc = 'Evita que Xbox Game Bar grabe juegos en segundo plano. La barra de juegos sigue disponible.'
     Action_Suggestions_Name = 'Desactivando sugerencias y publicidad'
@@ -90,7 +90,7 @@
     Action_DeliveryOptimization_Name = 'Desactivando descargas P2P de actualizaciones'
     Action_DeliveryOptimization_Desc = 'Las actualizaciones se descargan solo desde Microsoft, sin compartirlas con otros equipos.'
     Action_UltimatePerformance_Name = 'Plan "Máximo rendimiento" (opcional)'
-    Action_UltimatePerformance_Desc = 'Ofrece activar el plan Máximo rendimiento. Solo recomendado en equipos de escritorio. Se pregunta antes.'
+    Action_UltimatePerformance_Desc = 'Solo en equipos de escritorio: ofrece activar el plan Máximo rendimiento (se pregunta antes). En notebooks se omite.'
 
     # --- Estados de cada paso -------------------------------------------------
     Status_Ok        = 'OK'
@@ -108,7 +108,7 @@
     Detail_Trim             = 'Unidad {0}: SSD -> TRIM'
     Detail_Defrag           = 'Unidad {0}: HDD -> desfragmentar (puede tardar)'
     Detail_DiskUnknown      = 'Unidad {0}: tipo de disco desconocido; se omite por seguridad.'
-    Warn_BatteryHighPerformance = 'Se detectó una batería: el plan "Alto rendimiento" puede aumentar el consumo de batería.'
+    Warn_BatteryHighPerformance = 'Se detectó una batería: el plan "Alto rendimiento" puede aumentar el consumo. Si es una notebook, cambia el tipo de equipo con la opción 8.'
     Warn_UltimateDesktopOnly = 'El plan "Máximo rendimiento" solo se recomienda en equipos de escritorio: aumenta el consumo de energía.'
     Warn_UltimateBattery    = 'Este equipo tiene batería. Se recomienda responder N.'
     Ask_Ultimate            = '¿Activar el plan "Máximo rendimiento"?'
@@ -123,7 +123,7 @@
     Startup_ProtectedHidden = '{0} elemento(s) protegido(s) ocultos (antivirus, audio, video, touchpad).'
     Startup_None           = 'No hay programas de inicio para revisar.'
     Startup_PreviewNote    = 'en modo real podrás elegir cuáles deshabilitar'
-    Ask_SelectStartup      = 'Números a deshabilitar (ej.: 1,3,5-7). Enter o 0 = ninguno'
+    Ask_SelectStartup      = 'Números a deshabilitar (ej.: 1,3,5-7). Enter = ninguno, 0 = cancelar esta lista'
 
     # --- Apps preinstaladas ---------------------------------------------------
     Warn_BloatwareIrreversible = 'Quitar una app no se puede deshacer desde el respaldo (se reinstala desde Microsoft Store).'
@@ -131,7 +131,7 @@
     Bloat_PreviewNote   = 'en modo real podrás elegir cuáles quitar'
     Bloat_Removed       = '    Quitada: {0}'
     Bloat_Failed        = '    No se pudo quitar {0}: {1}'
-    Ask_SelectBloatware = 'Números a quitar (ej.: 1,3,5-7). Enter o 0 = ninguna'
+    Ask_SelectBloatware = 'Números a quitar (ej.: 1,3,5-7). Enter = ninguna, 0 = cancelar esta lista'
 
     # --- Vista previa ---------------------------------------------------------
     Preview_Header      = 'MODO VISTA PREVIA: no se aplicará ningún cambio.'
@@ -171,7 +171,7 @@
     Undo_None            = 'No hay respaldos con cambios para restaurar.'
     Undo_AlreadyRestored = '[ya restaurado]'
     Undo_AppsNote        = 'Se restauran registro, servicios, plan de energía, programas de inicio y tareas. Las apps quitadas se reinstalan desde Microsoft Store.'
-    Undo_Prompt          = 'Número de respaldo a restaurar (Enter = volver)'
+    Undo_Prompt          = 'Número de respaldo a restaurar (0 = volver)'
     Ask_Restore          = '¿Restaurar el respaldo del {0}?'
     Restore_EntryOk      = '  Restaurado: {0}'
     Restore_EntryFailed  = '  No se pudo restaurar {0}: {1}'
@@ -194,4 +194,26 @@
     Err_ProtectedItem     = '{0} está protegido y no se modifica.'
     Err_UnknownEntry      = 'Tipo de respaldo desconocido: {0}'
     Err_ExitCode          = '{0} terminó con código {1}.'
-}
+
+    # --- Navegación (v1.1) ----------------------------------------------------
+    Menu_8              = 'Cambiar tipo de equipo'
+    Menu_Header         = 'Idioma: {0}   |   Equipo: {1}'
+    Prompt_BackToMenu   = 'Presiona Enter o 0 para volver al menú'
+    Preview_ChooseLevel = '=== Vista previa: elige un nivel ==='
+    Info_ListCancelled  = 'Lista cancelada: no se aplicará nada de esta lista.'
+    Ask_ContinueLevel   = '¿Continuar con el resto del nivel? (N o 0 = volver al menú; todavía no se cambió nada)'
+
+    # --- Tipo de equipo (v1.1) ------------------------------------------------
+    Device_Title             = '=== Tipo de equipo ==='
+    Device_Desktop           = 'Computadora de escritorio'
+    Device_Notebook          = 'Notebook / laptop'
+    Device_BackToLanguage    = 'Volver (a elegir idioma)'
+    Device_DetectedBattery   = 'Detectamos batería: parece una notebook.'
+    Device_DetectedNoBattery = 'No detectamos batería: parece una computadora de escritorio.'
+    Device_MismatchDesktop   = 'Aviso: se detectó una batería, pero elegiste escritorio. Puedes continuar igual o cambiarlo luego con la opción 8.'
+    Device_MismatchNotebook  = 'Aviso: no se detectó batería, pero elegiste notebook. Puedes continuar igual o cambiarlo luego con la opción 8.'
+    Device_Selected          = 'Tipo de equipo: {0}'
+    Info_DeviceProfile       = 'Tipo de equipo: {0} (define el plan de energía que se usa).'
+    Info_NotebookPower       = 'En notebook se mantiene el plan Equilibrado y no se ofrece Máximo rendimiento.'
+    Detail_NotebookBalanced  = 'Notebook: se usa el plan Equilibrado (no se fuerza Alto rendimiento).'
+    Ultimate_NotebookSkipped = 'no se ofrece en notebooks (más calor y menos batería)'}

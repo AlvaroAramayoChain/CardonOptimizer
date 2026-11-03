@@ -67,8 +67,20 @@ Describe 'Repository files' {
         }
     }
 
+    It 'script-scope variables never overwrite the script parameters' {
+        # At script scope, $script:<Name> IS the parameter $<Name>: assigning it would lose the value passed on relaunch.
+        $parameters = @($ScriptAst.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
+        $parameters | Should -Contain 'DeviceType'
+        # Only script-level assignments or explicit $script: ones count; locals inside functions do not clash.
+        $assigned = $ScriptAst.FindAll({ param($node) $node -is [System.Management.Automation.Language.AssignmentStatementAst] }, $true) |
+            Where-Object { $_.Left -is [System.Management.Automation.Language.VariableExpressionAst] } |
+            Where-Object { $_.Left.VariablePath.UserPath -like 'script:*' -or -not (Get-TestParentFunctionName -Node $_) } |
+            ForEach-Object { $_.Left.VariablePath.UserPath -replace '^script:', '' }
+        foreach ($name in $parameters) { $assigned | Should -Not -Contain $name -Because "`$$name is a script parameter" }
+    }
+
     It 'contains the required project files' {
-        foreach ($name in @('Ejecutar.bat', 'README.md', 'LICENSE', 'CHANGELOG.md', '.gitignore', 'lang\es.psd1', 'lang\en.psd1')) {
+        foreach ($name in @('Ejecutar.bat', 'README.md', 'LICENSE', 'CHANGELOG.md', '.gitignore', 'lang\es.psd1', 'lang\en.psd1', 'tests\MANUAL-TESTING.md')) {
             Join-Path $RepoRoot $name | Should -Exist
         }
     }
@@ -124,10 +136,11 @@ Describe 'Language files' {
     }
 
     It 'every key built at runtime exists in every language' {
-        $dynamic = @('LanguageName', 'LanguagePrompt', 'SortOrder', 'YesKey', 'NoKey', 'StartType_Automatic')
+        $dynamic = @('LanguageName', 'LanguagePrompt', 'SortOrder', 'YesKey', 'NoKey', 'StartType_Automatic',
+                     'Device_Desktop', 'Device_Notebook', 'Device_BackToLanguage', 'Menu_Back')
         $dynamic += foreach ($action in $Catalog) { "Action_$($action.Id)_Name"; "Action_$($action.Id)_Desc" }
         $dynamic += foreach ($level in 1..3) { "Level_$($level)_Title"; "Level_$($level)_Summary" }
-        $dynamic += foreach ($option in 0..7) { "Menu_$option" }
+        $dynamic += foreach ($option in 0..8) { "Menu_$option" }
         $dynamic += 'Status_Ok', 'Status_Unchanged', 'Status_Skipped', 'Status_Preview', 'Status_Error'
         $dynamic += 'Source_RegistryUser', 'Source_RegistryMachine', 'Source_FolderUser', 'Source_FolderMachine', 'Source_Task'
         foreach ($key in $dynamic) {
@@ -229,6 +242,11 @@ Describe 'Action catalog' {
             ($Catalog | Where-Object Id -eq $id).Interactive | Should -BeTrue -Because $id
         }
     }
+
+    It 'every interactive action asks in a Prepare step (before restore point and backup)' {
+        foreach ($action in ($Catalog | Where-Object { $_.Interactive })) { $action.Prepare | Should -BeOfType [scriptblock] -Because $action.Id }
+        foreach ($action in ($Catalog | Where-Object { -not $_.Interactive })) { $action.Prepare | Should -BeNullOrEmpty -Because $action.Id }
+    }
 }
 
 Describe 'Red lines' {
@@ -314,6 +332,8 @@ Describe 'Helpers' {
         (ConvertTo-CardonSelection -InputText '2 2 1' -Maximum 3).Items | Should -Be @(1, 2)
         (ConvertTo-CardonSelection -InputText '' -Maximum 3).Items.Count | Should -Be 0
         (ConvertTo-CardonSelection -InputText '0' -Maximum 3).Valid | Should -BeTrue
+        (ConvertTo-CardonSelection -InputText '0' -Maximum 3).Cancelled | Should -BeTrue
+        (ConvertTo-CardonSelection -InputText '' -Maximum 3).Cancelled | Should -BeFalse
         (ConvertTo-CardonSelection -InputText '4' -Maximum 3).Valid | Should -BeFalse
         (ConvertTo-CardonSelection -InputText 'abc' -Maximum 3).Valid | Should -BeFalse
         (ConvertTo-CardonSelection -InputText '3-1' -Maximum 3).Valid | Should -BeFalse
@@ -501,6 +521,8 @@ Describe 'Preview mode changes nothing (no administrator rights needed)' {
         Mock Read-Host { throw 'The preview must not ask anything.' }
         Mock Write-Host { }
         # powercfg may only be called to read (/list, /getactivescheme); ipconfig, dism and sc never.
+        # Reads get a fake answer (a default mock is needed: Pester 6 does not fall back to the real command).
+        Mock Invoke-CardonNative -MockWith { [pscustomobject]@{ ExitCode = 0; Output = 'Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced) *' } }
         Mock Invoke-CardonNative -ParameterFilter { @('/list', '/getactivescheme') -notcontains $ArgumentList[0] } -MockWith { throw 'Native command called in preview mode.' }
     }
 
@@ -514,5 +536,239 @@ Describe 'Preview mode changes nothing (no administrator rights needed)' {
         foreach ($name in $script:MutatingCommands) { Should -Invoke -CommandName $name -Times 0 -Exactly }
         Should -Invoke Read-Host -Times 0 -Exactly
         Should -Invoke Invoke-CardonNative -Times 0 -Exactly -ParameterFilter { @('/list', '/getactivescheme') -notcontains $ArgumentList[0] }
+    }
+}
+
+Describe 'Device type (desktop / notebook)' {
+    BeforeEach {
+        $script:DryRun = $false
+        $script:Plan = @{}
+        Mock Write-Host { }
+        Mock Read-Host { throw 'Unexpected prompt.' }
+    }
+
+    AfterEach {
+        $script:SessionDeviceType = $null
+        $script:DryRun = $false
+    }
+
+    It 'without a choice, the device type is guessed from the battery' {
+        $script:SessionDeviceType = $null
+        Mock Test-CardonBattery { $true }
+        Get-CardonDeviceType | Should -Be 'Notebook'
+        Mock Test-CardonBattery { $false }
+        Get-CardonDeviceType | Should -Be 'Desktop'
+    }
+
+    It 'level 1 uses High performance on desktops and Balanced on notebooks' {
+        Mock Get-CardonActivePowerScheme { '00000000-0000-0000-0000-000000000000' }
+        Mock Test-CardonPowerScheme { $true }
+        Mock Test-CardonBattery { $false }
+        Mock Set-CardonPowerScheme { 'Changed' }
+        $action = $Catalog | Where-Object Id -eq 'PowerPlan'
+
+        $script:SessionDeviceType = 'Desktop'
+        [void](Invoke-CardonPowerPlan -Action $action)
+        Should -Invoke Set-CardonPowerScheme -Times 1 -Exactly -ParameterFilter { $Guid -eq $script:PowerSchemes.HighPerformance }
+
+        $script:SessionDeviceType = 'Notebook'
+        [void](Invoke-CardonPowerPlan -Action $action)
+        Should -Invoke Set-CardonPowerScheme -Times 1 -Exactly -ParameterFilter { $Guid -eq $script:PowerSchemes.Balanced }
+    }
+
+    It 'on notebooks an active High performance plan goes back to Balanced' {
+        Mock Get-CardonActivePowerScheme { $script:PowerSchemes.HighPerformance }
+        Mock Test-CardonBattery { $true }
+        Mock Set-CardonPowerScheme { 'Changed' }
+        $script:SessionDeviceType = 'Notebook'
+        [void](Invoke-CardonPowerPlan -Action ($Catalog | Where-Object Id -eq 'PowerPlan'))
+        Should -Invoke Set-CardonPowerScheme -Times 1 -Exactly -ParameterFilter { $Guid -eq $script:PowerSchemes.Balanced }
+    }
+
+    It 'the battery warning only appears when High performance is activated on a computer with a battery' {
+        Mock Get-CardonActivePowerScheme { $script:PowerSchemes.Balanced }
+        Mock Test-CardonPowerScheme { $true }
+        Mock Set-CardonPowerScheme { 'Changed' }
+        Mock Show-CardonText { }
+        $action = $Catalog | Where-Object Id -eq 'PowerPlan'
+
+        Mock Test-CardonBattery { $true }
+        $script:SessionDeviceType = 'Notebook'
+        [void](Invoke-CardonPowerPlan -Action $action)
+        Should -Invoke Show-CardonText -Times 0 -Exactly -ParameterFilter { $Key -eq 'Warn_BatteryHighPerformance' }
+
+        Mock Test-CardonBattery { $false }
+        $script:SessionDeviceType = 'Desktop'
+        [void](Invoke-CardonPowerPlan -Action $action)
+        Should -Invoke Show-CardonText -Times 0 -Exactly -ParameterFilter { $Key -eq 'Warn_BatteryHighPerformance' }
+
+        Mock Test-CardonBattery { $true }
+        [void](Invoke-CardonPowerPlan -Action $action)
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Warn_BatteryHighPerformance' }
+    }
+
+    It 'Ultimate Performance is never offered or applied on notebooks' {
+        Mock Get-CardonActivePowerScheme { $script:PowerSchemes.Balanced }
+        Mock New-CardonUltimatePowerScheme { 'x' }
+        Mock Set-CardonPowerScheme { 'Changed' }
+        $action = $Catalog | Where-Object Id -eq 'UltimatePerformance'
+        $script:SessionDeviceType = 'Notebook'
+
+        Request-CardonUltimateChoice -Action $action | Should -BeTrue
+        $script:Plan['UltimatePerformance'] | Should -BeFalse
+        (Invoke-CardonUltimatePerformance -Action $action).Status | Should -Be 'Skipped'
+        $script:DryRun = $true
+        (Invoke-CardonUltimatePerformance -Action $action).Status | Should -Be 'Skipped'
+
+        Should -Invoke Read-Host -Times 0 -Exactly
+        Should -Invoke New-CardonUltimatePowerScheme -Times 0 -Exactly
+        Should -Invoke Set-CardonPowerScheme -Times 0 -Exactly
+    }
+
+    It 'Ultimate Performance is offered on desktops and only applied after a yes' {
+        Mock Get-CardonActivePowerScheme { $script:PowerSchemes.HighPerformance }
+        Mock Test-CardonBattery { $false }
+        Mock Read-Host { 'N' }
+        Mock Set-CardonPowerScheme { 'Changed' }
+        $action = $Catalog | Where-Object Id -eq 'UltimatePerformance'
+        $script:SessionDeviceType = 'Desktop'
+
+        Request-CardonUltimateChoice -Action $action | Should -BeTrue
+        Should -Invoke Read-Host -Times 1 -Exactly
+        (Invoke-CardonUltimatePerformance -Action $action).Status | Should -Be 'Skipped'
+        Should -Invoke Set-CardonPowerScheme -Times 0 -Exactly
+    }
+
+    It 'the device screen stores the choice and warns softly on a mismatch' {
+        Mock Test-CardonBattery { $false }
+        Mock Show-CardonText { }
+        Mock Read-Host { '2' }
+        Select-CardonDeviceType | Should -BeTrue
+        $script:SessionDeviceType | Should -Be 'Notebook'
+        Should -Invoke Show-CardonText -Times 1 -Exactly -ParameterFilter { $Key -eq 'Device_MismatchNotebook' }
+    }
+}
+
+Describe 'Back navigation: 0 returns to the menu without restore points or backups' {
+    BeforeAll {
+        function Use-TestAnswer {
+            param([string[]]$Answer)
+            $script:TestAnswers = New-Object System.Collections.Queue
+            foreach ($item in $Answer) { $script:TestAnswers.Enqueue($item) }
+        }
+    }
+
+    BeforeEach {
+        $script:SessionDeviceType = 'Desktop'
+        $script:DryRun = $false
+        Mock Write-Host { }
+        Mock Read-Host { $script:TestAnswers.Dequeue() }
+        Mock New-CardonRestorePoint { $true }
+        Mock New-CardonBackupSession { }
+        Mock Invoke-CardonCheckpoint { }
+        Mock Invoke-CardonAction { }
+        Mock Test-CardonAdministrator { $true }
+        Mock Test-CardonBattery { $false }
+        Mock Get-CardonOsInfo { [pscustomobject]@{ Caption = 'Windows 11 Pro'; Build = 26100; Edition = 'Professional'; IsWindows11 = $true; IsSupported = $true } }
+        Mock Get-CardonActivePowerScheme { $script:PowerSchemes.HighPerformance }
+        Mock Get-CardonStartupItem {
+            @(
+                [pscustomobject]@{ Type = 'Registry'; Name = 'Spotify'; Command = 'spotify.exe'; Source = 'Source_RegistryUser'; ApprovedPath = 'HKCU:\X'; Protected = $false }
+                [pscustomobject]@{ Type = 'Registry'; Name = 'Steam'; Command = 'steam.exe'; Source = 'Source_RegistryUser'; ApprovedPath = 'HKCU:\X'; Protected = $false }
+            )
+        }
+        Mock Get-AppxPackage { $null }
+        Mock Get-AppxPackage { [pscustomobject]@{ Name = 'Clipchamp.Clipchamp'; PackageFullName = 'Clipchamp.Clipchamp_1' } } -ParameterFilter { $Name -eq 'Clipchamp.Clipchamp' }
+    }
+
+    AfterEach {
+        $script:SessionDeviceType = $null
+        $script:Plan = @{}
+    }
+
+    It 'answering <_> to the level confirmation returns to the menu (all levels)' -ForEach @('0', 'N') {
+        foreach ($level in 1..3) {
+            Use-TestAnswer -Answer @($_)
+            Invoke-CardonLevel -Level $level
+        }
+        Should -Invoke New-CardonRestorePoint -Times 0 -Exactly
+        Should -Invoke New-CardonBackupSession -Times 0 -Exactly
+        Should -Invoke Invoke-CardonAction -Times 0 -Exactly
+    }
+
+    It '0 in the startup list, then not continuing, changes nothing' {
+        Use-TestAnswer -Answer @('Y', '0', 'N')
+        Invoke-CardonLevel -Level 2
+        $script:TestAnswers.Count | Should -Be 0
+        Should -Invoke New-CardonRestorePoint -Times 0 -Exactly
+        Should -Invoke New-CardonBackupSession -Times 0 -Exactly
+        Should -Invoke Invoke-CardonAction -Times 0 -Exactly
+    }
+
+    It '0 in the app list, then 0 again (back), changes nothing' {
+        Use-TestAnswer -Answer @('Y', '', '0', '0')
+        Invoke-CardonLevel -Level 3
+        $script:TestAnswers.Count | Should -Be 0
+        Should -Invoke New-CardonRestorePoint -Times 0 -Exactly
+        Should -Invoke New-CardonBackupSession -Times 0 -Exactly
+        Should -Invoke Invoke-CardonAction -Times 0 -Exactly
+    }
+
+    It '0 in a list and then continuing applies the level but nothing from that list' {
+        Use-TestAnswer -Answer @('Y', '0', 'Y')
+        Invoke-CardonLevel -Level 2
+        @($script:Plan['StartupApps']).Count | Should -Be 0
+        Should -Invoke New-CardonRestorePoint -Times 1 -Exactly
+        Should -Invoke Invoke-CardonAction -Times 16 -Exactly
+    }
+
+    It 'all questions are asked before the restore point; notebooks are not asked about Ultimate' {
+        $script:SessionDeviceType = 'Notebook'
+        Mock New-CardonRestorePoint { $false }   # stop right after the questions
+        Use-TestAnswer -Answer @('Y', '', '')
+        Invoke-CardonLevel -Level 3
+        Should -Invoke Read-Host -Times 3 -Exactly
+        Should -Invoke New-CardonBackupSession -Times 0 -Exactly
+    }
+
+    It 'preview: 0 when choosing the level goes back without running anything' {
+        Mock Invoke-CardonLevel { }
+        Use-TestAnswer -Answer @('0')
+        Invoke-CardonMenuChoice -Choice '4' | Should -BeTrue
+        Should -Invoke Invoke-CardonLevel -Times 0 -Exactly
+    }
+
+    It 'undo: 0 in the backup list goes back without restoring' {
+        Mock Get-CardonBackupList { @([pscustomobject]@{ Path = 'x'; File = 'x'; Data = $null; Created = '2026-11-03T10:00:00'; Level = 1; Count = 3; Restored = $false }) }
+        Mock Restore-CardonBackup { }
+        Use-TestAnswer -Answer @('0')
+        Invoke-CardonMenuChoice -Choice '5' | Should -BeTrue
+        Should -Invoke Restore-CardonBackup -Times 0 -Exactly
+        Should -Invoke Read-Host -Times 1 -Exactly
+    }
+
+    It 'log: Enter or 0 goes back to the menu' {
+        Mock Show-CardonLog { }
+        Use-TestAnswer -Answer @('0')
+        Invoke-CardonMenuChoice -Choice '6' | Should -BeTrue
+        Should -Invoke Read-Host -Times 1 -Exactly
+    }
+
+    It 'language: 0 goes back without changing the language' {
+        Use-TestAnswer -Answer @('0')
+        Invoke-CardonMenuChoice -Choice '7' | Should -BeTrue
+        $script:LanguageCode | Should -Be 'en'
+    }
+
+    It 'device type: 0 goes back without changing the device type' {
+        Use-TestAnswer -Answer @('0')
+        Invoke-CardonMenuChoice -Choice '8' | Should -BeTrue
+        $script:SessionDeviceType | Should -Be 'Desktop'
+    }
+
+    It 'only 0 in the main menu exits' {
+        Invoke-CardonMenuChoice -Choice '0' | Should -BeFalse
+        Should -Invoke New-CardonRestorePoint -Times 0 -Exactly
+        Should -Invoke New-CardonBackupSession -Times 0 -Exactly
     }
 }

@@ -45,7 +45,7 @@
     Info_Cancelled  = 'Operation cancelled. No changes were applied.'
     Info_SafetyNet  = 'Before starting, a restore point and a backup of everything that changes will be created.'
     Warn_Level2_Time = 'Note: component cleanup (DISM) and disk optimization may take several minutes.'
-    Warn_Level3_Apps = 'Important: Windows apps you remove can NOT be restored from the backup. Nothing is removed unless you choose it.'
+    Warn_Level3_Apps = 'IMPORTANT: removing apps can NOT be undone. "Undo" restores registry, services, power plan and startup tasks, but NOT removed apps: they must be reinstalled from Microsoft Store. No app is preselected.'
     Info_StoreReinstall = 'To reinstall a removed app: open Microsoft Store, search for it by name and click "Get" (or use: winget install "<name>").'
 
     # --- Actions: name and description ----------------------------------------
@@ -62,7 +62,7 @@
     Action_DnsCache_Name = 'Flushing DNS cache'
     Action_DnsCache_Desc = 'Runs ipconfig /flushdns. Harmless: fixes pages that do not load.'
     Action_PowerPlan_Name = 'Setting the power plan'
-    Action_PowerPlan_Desc = 'Activates "High performance" if it exists; otherwise "Balanced". Reversible.'
+    Action_PowerPlan_Desc = 'Desktop: activates "High performance" (or "Balanced" if it does not exist). Notebook: keeps "Balanced". Reversible.'
     Action_GameDvr_Name = 'Disabling background recording (Game DVR)'
     Action_GameDvr_Desc = 'Stops Xbox Game Bar from recording games in the background. The Game Bar is still available.'
     Action_Suggestions_Name = 'Disabling suggestions and ads'
@@ -90,7 +90,7 @@
     Action_DeliveryOptimization_Name = 'Disabling peer-to-peer update downloads'
     Action_DeliveryOptimization_Desc = 'Updates are downloaded only from Microsoft, without sharing them with other computers.'
     Action_UltimatePerformance_Name = '"Ultimate Performance" plan (optional)'
-    Action_UltimatePerformance_Desc = 'Offers to activate the Ultimate Performance plan. Recommended for desktop computers only. You are asked first.'
+    Action_UltimatePerformance_Desc = 'Desktops only: offers to activate the Ultimate Performance plan (you are asked first). Skipped on notebooks.'
 
     # --- Step statuses --------------------------------------------------------
     Status_Ok        = 'OK'
@@ -108,7 +108,7 @@
     Detail_Trim             = 'Drive {0}: SSD -> TRIM'
     Detail_Defrag           = 'Drive {0}: HDD -> defragment (may take a while)'
     Detail_DiskUnknown      = 'Drive {0}: unknown disk type; skipped for safety.'
-    Warn_BatteryHighPerformance = 'A battery was detected: the "High performance" plan may increase battery usage.'
+    Warn_BatteryHighPerformance = 'A battery was detected: the "High performance" plan may increase power usage. If this is a notebook, change the device type with option 8.'
     Warn_UltimateDesktopOnly = 'The "Ultimate Performance" plan is recommended for desktop computers only: it increases power usage.'
     Warn_UltimateBattery    = 'This computer has a battery. Answering N is recommended.'
     Ask_Ultimate            = 'Activate the "Ultimate Performance" plan?'
@@ -123,7 +123,7 @@
     Startup_ProtectedHidden = '{0} protected item(s) hidden (antivirus, audio, video, touchpad).'
     Startup_None           = 'There are no startup programs to review.'
     Startup_PreviewNote    = 'in real mode you will choose which ones to disable'
-    Ask_SelectStartup      = 'Numbers to disable (e.g. 1,3,5-7). Enter or 0 = none'
+    Ask_SelectStartup      = 'Numbers to disable (e.g. 1,3,5-7). Enter = none, 0 = cancel this list'
 
     # --- Preinstalled apps ----------------------------------------------------
     Warn_BloatwareIrreversible = 'Removing an app can not be undone from the backup (reinstall it from Microsoft Store).'
@@ -131,7 +131,7 @@
     Bloat_PreviewNote   = 'in real mode you will choose which ones to remove'
     Bloat_Removed       = '    Removed: {0}'
     Bloat_Failed        = '    Could not remove {0}: {1}'
-    Ask_SelectBloatware = 'Numbers to remove (e.g. 1,3,5-7). Enter or 0 = none'
+    Ask_SelectBloatware = 'Numbers to remove (e.g. 1,3,5-7). Enter = none, 0 = cancel this list'
 
     # --- Preview --------------------------------------------------------------
     Preview_Header      = 'PREVIEW MODE: no changes will be applied.'
@@ -171,7 +171,7 @@
     Undo_None            = 'There are no backups with changes to restore.'
     Undo_AlreadyRestored = '[already restored]'
     Undo_AppsNote        = 'Registry, services, power plan, startup programs and tasks are restored. Removed apps are reinstalled from Microsoft Store.'
-    Undo_Prompt          = 'Backup number to restore (Enter = back)'
+    Undo_Prompt          = 'Backup number to restore (0 = back)'
     Ask_Restore          = 'Restore the backup from {0}?'
     Restore_EntryOk      = '  Restored: {0}'
     Restore_EntryFailed  = '  Could not restore {0}: {1}'
@@ -194,4 +194,26 @@
     Err_ProtectedItem     = '{0} is protected and is not modified.'
     Err_UnknownEntry      = 'Unknown backup entry type: {0}'
     Err_ExitCode          = '{0} finished with exit code {1}.'
-}
+
+    # --- Navigation (v1.1) ----------------------------------------------------
+    Menu_8              = 'Change device type'
+    Menu_Header         = 'Language: {0}   |   Device: {1}'
+    Prompt_BackToMenu   = 'Press Enter or 0 to go back to the menu'
+    Preview_ChooseLevel = '=== Preview: choose a level ==='
+    Info_ListCancelled  = 'List cancelled: nothing from this list will be applied.'
+    Ask_ContinueLevel   = 'Continue with the rest of the level? (N or 0 = back to the menu; nothing has been changed yet)'
+
+    # --- Device type (v1.1) ---------------------------------------------------
+    Device_Title             = '=== Device type ==='
+    Device_Desktop           = 'Desktop computer'
+    Device_Notebook          = 'Notebook / laptop'
+    Device_BackToLanguage    = 'Back (to choose language)'
+    Device_DetectedBattery   = 'Battery detected: this looks like a notebook.'
+    Device_DetectedNoBattery = 'No battery detected: this looks like a desktop computer.'
+    Device_MismatchDesktop   = 'Note: a battery was detected, but you chose desktop. You can continue anyway or change it later with option 8.'
+    Device_MismatchNotebook  = 'Note: no battery was detected, but you chose notebook. You can continue anyway or change it later with option 8.'
+    Device_Selected          = 'Device type: {0}'
+    Info_DeviceProfile       = 'Device type: {0} (defines the power plan that is used).'
+    Info_NotebookPower       = 'On notebooks the Balanced plan is kept and Ultimate Performance is not offered.'
+    Detail_NotebookBalanced  = 'Notebook: the Balanced plan is used (High performance is not forced).'
+    Ultimate_NotebookSkipped = 'not offered on notebooks (more heat and less battery)'}
