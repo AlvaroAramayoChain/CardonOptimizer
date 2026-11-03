@@ -1,0 +1,29 @@
+# CardonOptimizer runtime data (normally in %LOCALAPPDATA%, ignored here just in case)
+logs/
+backups/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Test results
+testResults.xml
+TestResults/
+coverage.xml
+
+# Editors
+.vscode/
+.idea/
+*.code-workspace
+*.swp
+*~
+
+# Operating system
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+.DS_Store
